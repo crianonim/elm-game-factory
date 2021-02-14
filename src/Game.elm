@@ -13,6 +13,7 @@ type alias GameModel =
     , inventory : Inventory
     , machines : List Machine
     , log : List String
+    , idCounter : Int
     }
 
 
@@ -28,12 +29,19 @@ type alias Machine =
     }
 
 
+type MachineType
+    = DirtDigger
+    | Well
+    | StoneChrusher
+    | StoneDigger
+
+
 type alias Item =
     ( String, Int )
 
 
 type alias Inventory =
-     OrderedDict.OrderedDict String Int
+    OrderedDict.OrderedDict String Int
 
 
 type Msg
@@ -45,14 +53,48 @@ init : GameModel
 init =
     { turn = 1
     , inventory = [ ( "water", 10 ), ( "dirt", 5 ) ]
-    , machines =
-        [ Machine 0 "Dirt Digger" (Produce ( "dirt", 2 ))
-        , Machine 1 "StoneDigger" (Produce ( "stone", 1 ))
-        , Machine 2 "Well" (Produce ( "water", 1 ))
-        , Machine 3 "StoneCrusher" (Convert ( "stone", 2 ) ( "dirt", 5 ))
-        ]
+    , machines = []
     , log = [ "Game begins" ]
+    , idCounter = 0
     }
+        |> (\model ->
+                let
+                    ( machines, idLast ) =
+                        List.foldr
+                            (\( n, a ) ( l, counter ) ->
+                                let
+                                    ( machine, id ) =
+                                        mkMachine n a counter
+                                in
+                                ( machine :: l, id )
+                            )
+                            ( [], model.idCounter )
+                            (List.map getMachineDefinition
+                                [ DirtDigger
+                                , StoneChrusher
+                                , Well
+                                , StoneDigger
+                                ]
+                            )
+                in
+                { model | machines = machines, idCounter = idLast }
+           )
+
+
+getMachineDefinition : MachineType -> ( String, MachineOperation )
+getMachineDefinition machineType =
+    case machineType of
+        DirtDigger ->
+            ( "Dirt Digger", Produce ( "dirt", 2 ) )
+
+        Well ->
+            ( "Well", Produce ( "water", 1 ) )
+
+        StoneChrusher ->
+            ( "StoneCrusher", Convert ( "stone", 2 ) ( "dirt", 5 ) )
+
+        StoneDigger ->
+            ( "Stone Digger", Produce ( "stone", 1 ) )
 
 
 inventoryLens =
@@ -78,9 +120,18 @@ tick game =
         )
 
 
+mkMachine : String -> MachineOperation -> Int -> ( Machine, Int )
+mkMachine name action idCounter =
+    let
+        id =
+            idCounter + 1
+    in
+    ( Machine id name action, id )
+
+
 itemToString : Item -> String
 itemToString ( name, amount ) =
-    String.fromInt amount ++ " of " ++  name
+    String.fromInt amount ++ " of " ++ name
 
 
 applyLog : ( GameModel, String ) -> GameModel
@@ -105,7 +156,7 @@ addItem inventory ( item, amount ) =
     OrderedDict.insert item newAmount inventory
 
 
-removeItem : Inventory-> (String, Int) -> Maybe Inventory
+removeItem : Inventory -> ( String, Int ) -> Maybe Inventory
 removeItem inventory ( item, amount ) =
     let
         newAmount =
