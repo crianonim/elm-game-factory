@@ -2,9 +2,9 @@ module Main exposing (main)
 
 import Browser
 import Game
-import Html exposing (Attribute, Html, a, button, div, h1, hr, img, input, p, pre, text)
-import Html.Attributes exposing (selected, src, value)
-import Html.Events exposing (onClick, onInput)
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Platform.Cmd exposing (Cmd)
 import Random
 

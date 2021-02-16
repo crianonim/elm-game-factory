@@ -2,10 +2,11 @@ module Game exposing (..)
 
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, a, button, div, h1, hr, img, input, p, pre, text)
-import Html.Attributes exposing (selected, src, value)
+import Html.Attributes exposing (class, selected, src, value)
 import Html.Events exposing (onClick, onInput)
+import Inventory exposing (Inventory, Item)
 import Monocle.Lens exposing (Lens)
-import OrderedDict
+import Style
 
 
 type alias GameModel =
@@ -36,14 +37,6 @@ type MachineType
     | StoneDigger
 
 
-type alias Item =
-    ( String, Int )
-
-
-type alias Inventory =
-    OrderedDict.OrderedDict String Int
-
-
 type Msg
     = Tick
     | RemoveMachine Int
@@ -52,7 +45,7 @@ type Msg
 init : GameModel
 init =
     { turn = 1
-    , inventory = [ ( "water", 10 ), ( "dirt", 5 ) ]
+    , inventory = [ ( "water", 10 ), ( "dirt", 5 ) ] |> List.map (\(name,amount) ->  (name,(name,amount))) |> Dict.fromList
     , machines = []
     , log = [ "Game begins" ]
     , idCounter = 0
@@ -129,11 +122,6 @@ mkMachine name action idCounter =
     ( Machine id name action, id )
 
 
-itemToString : Item -> String
-itemToString ( name, amount ) =
-    String.fromInt amount ++ " of " ++ name
-
-
 applyLog : ( GameModel, String ) -> GameModel
 applyLog ( game, logMessage ) =
     { game | log = logMessage :: game.log }
@@ -144,31 +132,6 @@ addTurnAction game =
     ( { game | turn = game.turn + 1 }, "New Turn " ++ (String.fromInt <| game.turn + 1) )
 
 
-addItem : Inventory -> Item -> Inventory
-addItem inventory ( item, amount ) =
-    let
-        i =
-            List.filter ((==) item << Tuple.first) inventory |> List.head |> Maybe.map Tuple.second
-
-        newAmount =
-            amount + (i |> Maybe.withDefault 0)
-    in
-    OrderedDict.insert item newAmount inventory
-
-
-removeItem : Inventory -> ( String, Int ) -> Maybe Inventory
-removeItem inventory ( item, amount ) =
-    let
-        newAmount =
-            (OrderedDict.get item inventory |> Maybe.withDefault 0) - amount
-    in
-    if newAmount < 0 then
-        Nothing
-
-    else
-        Just (OrderedDict.insert item newAmount inventory)
-
-
 processMachine : Machine -> GameModel -> ( GameModel, String )
 processMachine { action, name } game =
     let
@@ -177,24 +140,24 @@ processMachine { action, name } game =
     in
     case action of
         Produce item ->
-            ( inventoryLens.set (addItem inventory item) game, name ++ " produced " ++ itemToString item )
+            ( inventoryLens.set (Inventory.addItem inventory item) game, name ++ " produced " ++ Inventory.itemToString item )
 
         Convert fromItem toItem ->
             let
                 remove =
-                    removeItem inventory fromItem
+                    Inventory.removeItem inventory fromItem
             in
             case remove of
                 Nothing ->
-                    ( game, name ++ " couldn't find " ++ itemToString fromItem )
+                    ( game, name ++ " couldn't find " ++ Inventory.itemToString fromItem )
 
                 Just inventoryAfterRemove ->
-                    ( inventoryLens.set (addItem inventoryAfterRemove toItem) game, name ++ " converted " ++ itemToString fromItem ++ " into " ++ itemToString toItem )
+                    ( inventoryLens.set (Inventory.addItem inventoryAfterRemove toItem) game, name ++ " converted " ++ Inventory.itemToString fromItem ++ " into " ++ Inventory.itemToString toItem )
 
 
 viewInventory : Inventory -> Html msg
 viewInventory inventory =
-    div [] (List.map viewItem inventory)
+    div [] (List.map viewItem <| Dict.values inventory)
 
 
 viewItem : ( String, Int ) -> Html msg
@@ -209,17 +172,23 @@ viewMachines machines =
 
 viewMachine : Machine -> Html Msg
 viewMachine { id, name, action } =
-    div []
+    div [ Style.machine ]
         [ text name
         , text
             (case action of
                 Produce item ->
-                    " produces " ++ itemToString item ++ " per tick."
+                    " produces " ++ Inventory.itemToString item ++ " per tick."
 
                 Convert fromItem toItem ->
-                    " converts " ++ itemToString fromItem ++ " to " ++ itemToString toItem
+                    " converts " ++ Inventory.itemToString fromItem ++ " to " ++ Inventory.itemToString toItem
             )
-        , button [ onClick (RemoveMachine id) ] [ text "Remove it" ]
+        , button
+            [ onClick (RemoveMachine id)
+            , Style.btn
+            , Style.bgRed
+            , Style.textWhite
+            ]
+            [ text "Remove it" ]
         ]
 
 
