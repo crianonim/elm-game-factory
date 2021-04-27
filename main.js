@@ -5817,10 +5817,9 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$class = $elm$html$Html$Attributes$stringProperty('className');
-var $author$project$Style$bgRed = $elm$html$Html$Attributes$class('bg-red-500');
-var $author$project$Style$btn = $elm$html$Html$Attributes$class('px-3 py-2 my-1 shadow rounded-md');
+var $author$project$Style$btnBlue = $elm$html$Html$Attributes$class('hover:text-blue-500 bg-blue-500 hover:border-blue-500');
+var $author$project$Style$btnSmall = $elm$html$Html$Attributes$class('border-2 border-transparent ml-3 py-1 px-2 font-bold uppercase text-white rounded transition-all hover:bg-transparent');
 var $author$project$Style$machine = $elm$html$Html$Attributes$class('rounded-xl p-3 w-60 h-60 border-2');
-var $author$project$Style$textWhite = $elm$html$Html$Attributes$class('text-white');
 var $author$project$Game$viewMachine = function (_v0) {
 	var id = _v0.id;
 	var name = _v0.name;
@@ -5849,9 +5848,8 @@ var $author$project$Game$viewMachine = function (_v0) {
 					[
 						$elm$html$Html$Events$onClick(
 						$author$project$Game$RemoveMachine(id)),
-						$author$project$Style$btn,
-						$author$project$Style$bgRed,
-						$author$project$Style$textWhite
+						$author$project$Style$btnSmall,
+						$author$project$Style$btnBlue
 					]),
 				_List_fromArray(
 					[

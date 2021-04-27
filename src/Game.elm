@@ -33,7 +33,7 @@ type alias Machine =
 type MachineType
     = DirtDigger
     | Well
-    | StoneChrusher
+    | StoneCrusher
     | StoneDigger
 
 
@@ -64,7 +64,7 @@ init =
                             ( [], model.idCounter )
                             (List.map getMachineDefinition
                                 [ DirtDigger
-                                , StoneChrusher
+                                , StoneCrusher
                                 , Well
                                 , StoneDigger
                                 ]
@@ -83,7 +83,7 @@ getMachineDefinition machineType =
         Well ->
             ( "Well", Produce ( "water", 1 ) )
 
-        StoneChrusher ->
+        StoneCrusher ->
             ( "StoneCrusher", Convert ( "stone", 2 ) ( "dirt", 5 ) )
 
         StoneDigger ->
@@ -184,9 +184,8 @@ viewMachine { id, name, action } =
             )
         , button
             [ onClick (RemoveMachine id)
-            , Style.btn
-            , Style.bgRed
-            , Style.textWhite
+            , Style.btnSmall
+            , Style.btnBlue
             ]
             [ text "Remove it" ]
         ]
