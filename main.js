@@ -5182,7 +5182,7 @@ var $elm$core$Task$perform = F2(
 	});
 var $elm$browser$Browser$element = _Browser_element;
 var $author$project$Game$DirtDigger = {$: 'DirtDigger'};
-var $author$project$Game$StoneChrusher = {$: 'StoneChrusher'};
+var $author$project$Game$StoneCrusher = {$: 'StoneCrusher'};
 var $author$project$Game$StoneDigger = {$: 'StoneDigger'};
 var $author$project$Game$Well = {$: 'Well'};
 var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
@@ -5308,6 +5308,19 @@ var $elm$core$Dict$fromList = function (assocs) {
 		$elm$core$Dict$empty,
 		assocs);
 };
+var $author$project$Util$dict = F2(
+	function (fn, x) {
+		return $elm$core$Dict$fromList(
+			A2(
+				$elm$core$List$map,
+				function (y) {
+					return _Utils_Tuple2(
+						fn(y),
+						y);
+				},
+				x));
+	});
+var $author$project$Util$dictFromTuples = $author$project$Util$dict($elm$core$Tuple$first);
 var $author$project$Game$Convert = F2(
 	function (a, b) {
 		return {$: 'Convert', a: a, b: b};
@@ -5327,7 +5340,7 @@ var $author$project$Game$getMachineDefinition = function (machineType) {
 				'Well',
 				$author$project$Game$Produce(
 					_Utils_Tuple2('water', 1)));
-		case 'StoneChrusher':
+		case 'StoneCrusher':
 			return _Utils_Tuple2(
 				'StoneCrusher',
 				A2(
@@ -5353,17 +5366,17 @@ var $author$project$Game$mkMachine = F3(
 			id);
 	});
 var $author$project$Game$init = function (model) {
-	var _v1 = A3(
+	var _v0 = A3(
 		$elm$core$List$foldr,
 		F2(
-			function (_v2, _v3) {
-				var n = _v2.a;
-				var a = _v2.b;
-				var l = _v3.a;
-				var counter = _v3.b;
-				var _v4 = A3($author$project$Game$mkMachine, n, a, counter);
-				var machine = _v4.a;
-				var id = _v4.b;
+			function (_v1, _v2) {
+				var n = _v1.a;
+				var a = _v1.b;
+				var l = _v2.a;
+				var counter = _v2.b;
+				var _v3 = A3($author$project$Game$mkMachine, n, a, counter);
+				var machine = _v3.a;
+				var id = _v3.b;
 				return _Utils_Tuple2(
 					A2($elm$core$List$cons, machine, l),
 					id);
@@ -5373,30 +5386,21 @@ var $author$project$Game$init = function (model) {
 			$elm$core$List$map,
 			$author$project$Game$getMachineDefinition,
 			_List_fromArray(
-				[$author$project$Game$DirtDigger, $author$project$Game$StoneChrusher, $author$project$Game$Well, $author$project$Game$StoneDigger])));
-	var machines = _v1.a;
-	var idLast = _v1.b;
+				[$author$project$Game$DirtDigger, $author$project$Game$StoneCrusher, $author$project$Game$Well, $author$project$Game$StoneDigger])));
+	var machines = _v0.a;
+	var idLast = _v0.b;
 	return _Utils_update(
 		model,
 		{idCounter: idLast, machines: machines});
 }(
 	{
 		idCounter: 0,
-		inventory: $elm$core$Dict$fromList(
-			A2(
-				$elm$core$List$map,
-				function (_v0) {
-					var name = _v0.a;
-					var amount = _v0.b;
-					return _Utils_Tuple2(
-						name,
-						_Utils_Tuple2(name, amount));
-				},
-				_List_fromArray(
-					[
-						_Utils_Tuple2('water', 10),
-						_Utils_Tuple2('dirt', 5)
-					]))),
+		inventory: $author$project$Util$dictFromTuples(
+			_List_fromArray(
+				[
+					_Utils_Tuple2('water', 10),
+					_Utils_Tuple2('dirt', 5)
+				])),
 		log: _List_fromArray(
 			['Game begins']),
 		machines: _List_Nil,

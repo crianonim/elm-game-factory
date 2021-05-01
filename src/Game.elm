@@ -7,7 +7,7 @@ import Html.Events exposing (onClick, onInput)
 import Inventory exposing (Inventory, Item)
 import Monocle.Lens exposing (Lens)
 import Style
-
+import Util
 
 type alias GameModel =
     { turn : Int
@@ -45,7 +45,7 @@ type Msg
 init : GameModel
 init =
     { turn = 1
-    , inventory = [ ( "water", 10 ), ( "dirt", 5 ) ] |> List.map (\(name,amount) ->  (name,(name,amount))) |> Dict.fromList
+    , inventory = [ ( "water", 10 ), ( "dirt", 5 ) ] |> Util.dictFromTuples
     , machines = []
     , log = [ "Game begins" ]
     , idCounter = 0
