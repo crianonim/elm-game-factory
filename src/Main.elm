@@ -83,7 +83,10 @@ view model =
         , div []
             [ text <| "Game Turn " ++ String.fromInt model.game.turn
             , button [ onClick Tick ] [ text "Tick" ]
+            , h6 [] [ text "Inventory" ]
             , Game.viewInventory model.game.inventory
+            , h6 [] [ text "Buffer" ]
+            , Game.viewInventory model.game.buffer
             , Game.viewMachines model.game.machines |> Html.map GameMsg
             ]
         , div [] [ Game.viewLog model.game.log ]

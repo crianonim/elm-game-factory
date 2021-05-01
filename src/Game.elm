@@ -5,6 +5,7 @@ import Html exposing (Attribute, Html, a, button, div, h1, hr, img, input, p, pr
 import Html.Attributes exposing (class, selected, src, value)
 import Html.Events exposing (onClick, onInput)
 import Inventory exposing (Inventory, Item)
+import Items
 import Monocle.Lens exposing (Lens)
 import Random
 import Style
@@ -14,6 +15,7 @@ import Util
 type alias GameModel =
     { turn : Int
     , inventory : Inventory
+    , buffer : Inventory
     , machines : List Machine
     , log : List String
     , seed : Random.Seed
@@ -21,14 +23,14 @@ type alias GameModel =
 
 
 type MachineOperation
-    = Produce Item
-    | Convert Item Item
+    = Input Item
+    | Output Item
 
 
 type alias Machine =
     { id : String
     , name : String
-    , action : MachineOperation
+    , actions : List MachineOperation
     }
 
 
@@ -47,7 +49,8 @@ type Msg
 init : GameModel
 init =
     { turn = 1
-    , inventory = [ ( "water", 10 ), ( "dirt", 5 ) ] |> Util.dictFromTuples
+    , inventory = [ ( Items.water, 10 ), ( Items.dirt, 5 ) ] |> Util.dictFromTuples
+    , buffer = Dict.empty
     , machines = []
     , log = [ "Game begins" ]
     , seed = Random.initialSeed 555
@@ -79,24 +82,28 @@ init =
            )
 
 
-getMachineDefinition : MachineType -> ( String, MachineOperation )
+getMachineDefinition : MachineType -> ( String, List MachineOperation )
 getMachineDefinition machineType =
     case machineType of
         DirtDigger ->
-            ( "Dirt Digger", Produce ( "dirt", 2 ) )
+            ( "Dirt Digger", [ Output ( Items.dirt, 2 ) ] )
 
         Well ->
-            ( "Well", Produce ( "water", 1 ) )
+            ( "Well", [ Output ( Items.water, 1 ) ] )
 
         StoneCrusher ->
-            ( "StoneCrusher", Convert ( "stone", 2 ) ( "dirt", 5 ) )
+            ( "StoneCrusher", [ Input ( Items.stone, 2 ), Output ( Items.dirt, 5 ) ] )
 
         StoneDigger ->
-            ( "Stone Digger", Produce ( "stone", 1 ) )
+            ( "Stone Digger", [ Output ( Items.stone, 1 ) ] )
 
 
 inventoryLens =
     Lens .inventory (\i g -> { g | inventory = i })
+
+
+bufferLens =
+    Lens .buffer (\b g -> { g | buffer = b })
 
 
 update msg game =
@@ -108,6 +115,22 @@ update msg game =
             { game | machines = List.filter ((/=) id << .id) game.machines }
 
 
+addBufferToInventory : GameModel -> GameModel
+addBufferToInventory game =
+    let
+        bufferList =
+            bufferLens.get game |> Dict.values
+
+        inventory =
+            inventoryLens.get game
+
+        newInventory =
+            List.foldl (\item inv -> Inventory.addItem inv item) inventory bufferList
+    in
+    inventoryLens.set newInventory game
+        |> bufferLens.set Dict.empty
+
+
 tick : GameModel -> GameModel
 tick game =
     List.foldl
@@ -116,44 +139,83 @@ tick game =
         (List.map processMachine game.machines
             ++ [ addTurnAction ]
         )
+        |> addBufferToInventory
 
 
-mkMachine : String -> MachineOperation -> String -> Machine
-mkMachine name action id =
-    Machine id name action
+mkMachine : String -> List MachineOperation -> String -> Machine
+mkMachine name actions id =
+    Machine id name actions
 
 
-applyLog : ( GameModel, String ) -> GameModel
-applyLog ( game, logMessage ) =
-    { game | log = logMessage :: game.log }
+applyLog : ( GameModel, List String ) -> GameModel
+applyLog ( game, logMessages ) =
+    { game | log = logMessages ++ game.log }
 
 
-addTurnAction : GameModel -> ( GameModel, String )
+addTurnAction : GameModel -> ( GameModel, List String )
 addTurnAction game =
-    ( { game | turn = game.turn + 1 }, "New Turn " ++ (String.fromInt <| game.turn + 1) )
+    ( { game | turn = game.turn + 1 }, [ "New Turn " ++ (String.fromInt <| game.turn + 1) ] )
 
 
-processMachine : Machine -> GameModel -> ( GameModel, String )
-processMachine { action, name } game =
+processMachine : Machine -> GameModel -> ( GameModel, List String )
+processMachine { actions, name } game =
     let
-        inventory =
-            inventoryLens.get game
+        --( inventory, buffer, logs ) =
+        res =
+            List.foldl
+                (\action result ->
+                    case result of
+                        Ok ( oldInv, oldBuffer, oldlogs ) ->
+                            case action of
+                                Output item ->
+                                    Ok ( oldInv, Inventory.addItem oldBuffer item, ("output" ++ Inventory.itemToString item) :: oldlogs )
+
+                                Input item ->
+                                    let
+                                        remove =
+                                            Inventory.removeItem oldInv item
+                                    in
+                                    case remove of
+                                        Nothing ->
+                                            Err ( oldInv, oldBuffer, ("I can't find " ++ Inventory.itemToString item) :: oldlogs )
+
+                                        Just inventoryAfterRemove ->
+                                            Ok ( inventoryAfterRemove, oldBuffer, ("I took " ++ Inventory.itemToString item) :: oldlogs )
+
+                        Err err ->
+                            Err err
+                )
+                (Ok ( inventoryLens.get game, bufferLens.get game, [] ))
+                actions
     in
-    case action of
-        Produce item ->
-            ( inventoryLens.set (Inventory.addItem inventory item) game, name ++ " produced " ++ Inventory.itemToString item )
+    case res of
+        Ok ( inventory, buffer, logs ) ->
+            ( game
+                |> inventoryLens.set inventory
+                |> bufferLens.set buffer
+            , logs
+            )
 
-        Convert fromItem toItem ->
-            let
-                remove =
-                    Inventory.removeItem inventory fromItem
-            in
-            case remove of
-                Nothing ->
-                    ( game, name ++ " couldn't find " ++ Inventory.itemToString fromItem )
+        Err ( _, _, logs ) ->
+            ( game, logs )
 
-                Just inventoryAfterRemove ->
-                    ( inventoryLens.set (Inventory.addItem inventoryAfterRemove toItem) game, name ++ " converted " ++ Inventory.itemToString fromItem ++ " into " ++ Inventory.itemToString toItem )
+
+
+--case action of
+--    Produce item ->
+--        ( inventoryLens.set (Inventory.addItem inventory item) game, name ++ " produced " ++ Inventory.itemToString item )
+--
+--    Convert fromItem toItem ->
+--        let
+--            remove =
+--                Inventory.removeItem inventory fromItem
+--        in
+--        case remove of
+--            Nothing ->
+--                ( game, name ++ " couldn't find " ++ Inventory.itemToString fromItem )
+--
+--            Just inventoryAfterRemove ->
+--                ( inventoryLens.set (Inventory.addItem inventoryAfterRemove toItem) game, name ++ " converted " ++ Inventory.itemToString fromItem ++ " into " ++ Inventory.itemToString toItem )
 
 
 viewInventory : Inventory -> Html msg
@@ -172,18 +234,19 @@ viewMachines machines =
 
 
 viewMachine : Machine -> Html Msg
-viewMachine { id, name, action } =
+viewMachine { id, name, actions } =
     div [ Style.machine ]
         [ text name
         , text id
-        , text
-            (case action of
-                Produce item ->
-                    " produces " ++ Inventory.itemToString item ++ " per tick."
 
-                Convert fromItem toItem ->
-                    " converts " ++ Inventory.itemToString fromItem ++ " to " ++ Inventory.itemToString toItem
-            )
+        --, text
+        --    (case action of
+        --        Produce item ->
+        --            " produces " ++ Inventory.itemToString item ++ " per tick."
+        --
+        --        Convert fromItem toItem ->
+        --            " converts " ++ Inventory.itemToString fromItem ++ " to " ++ Inventory.itemToString toItem
+        --    )
         , button
             [ onClick (RemoveMachine id)
             , Style.btnSmall

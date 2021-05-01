@@ -39,4 +39,3 @@ removeItem inventory ( name, amount ) =
 
     else
         Just (Dict.insert name ( name, newAmount ) inventory)
-

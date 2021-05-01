@@ -5321,6 +5321,7 @@ var $author$project$Util$dict = F2(
 				x));
 	});
 var $author$project$Util$dictFromTuples = $author$project$Util$dict($elm$core$Tuple$first);
+var $author$project$Items$dirt = 'dirt';
 var $elm$core$Array$fromListHelp = F3(
 	function (list, nodeList, nodeListSize) {
 		fromListHelp:
@@ -5498,37 +5499,50 @@ var $author$project$Util$generateId = function (seed) {
 		_Utils_Tuple2('', seed),
 		A2($elm$core$List$range, 0, idLength));
 };
-var $author$project$Game$Convert = F2(
-	function (a, b) {
-		return {$: 'Convert', a: a, b: b};
-	});
-var $author$project$Game$Produce = function (a) {
-	return {$: 'Produce', a: a};
+var $author$project$Game$Input = function (a) {
+	return {$: 'Input', a: a};
 };
+var $author$project$Game$Output = function (a) {
+	return {$: 'Output', a: a};
+};
+var $author$project$Items$stone = 'stone';
+var $author$project$Items$water = 'water';
 var $author$project$Game$getMachineDefinition = function (machineType) {
 	switch (machineType.$) {
 		case 'DirtDigger':
 			return _Utils_Tuple2(
 				'Dirt Digger',
-				$author$project$Game$Produce(
-					_Utils_Tuple2('dirt', 2)));
+				_List_fromArray(
+					[
+						$author$project$Game$Output(
+						_Utils_Tuple2($author$project$Items$dirt, 2))
+					]));
 		case 'Well':
 			return _Utils_Tuple2(
 				'Well',
-				$author$project$Game$Produce(
-					_Utils_Tuple2('water', 1)));
+				_List_fromArray(
+					[
+						$author$project$Game$Output(
+						_Utils_Tuple2($author$project$Items$water, 1))
+					]));
 		case 'StoneCrusher':
 			return _Utils_Tuple2(
 				'StoneCrusher',
-				A2(
-					$author$project$Game$Convert,
-					_Utils_Tuple2('stone', 2),
-					_Utils_Tuple2('dirt', 5)));
+				_List_fromArray(
+					[
+						$author$project$Game$Input(
+						_Utils_Tuple2($author$project$Items$stone, 2)),
+						$author$project$Game$Output(
+						_Utils_Tuple2($author$project$Items$dirt, 5))
+					]));
 		default:
 			return _Utils_Tuple2(
 				'Stone Digger',
-				$author$project$Game$Produce(
-					_Utils_Tuple2('stone', 1)));
+				_List_fromArray(
+					[
+						$author$project$Game$Output(
+						_Utils_Tuple2($author$project$Items$stone, 1))
+					]));
 	}
 };
 var $elm$random$Random$initialSeed = function (x) {
@@ -5541,12 +5555,12 @@ var $elm$random$Random$initialSeed = function (x) {
 		A2($elm$random$Random$Seed, state2, incr));
 };
 var $author$project$Game$Machine = F3(
-	function (id, name, action) {
-		return {action: action, id: id, name: name};
+	function (id, name, actions) {
+		return {actions: actions, id: id, name: name};
 	});
 var $author$project$Game$mkMachine = F3(
-	function (name, action, id) {
-		return A3($author$project$Game$Machine, id, name, action);
+	function (name, actions, id) {
+		return A3($author$project$Game$Machine, id, name, actions);
 	});
 var $author$project$Game$init = function (model) {
 	var _v0 = A3(
@@ -5578,11 +5592,12 @@ var $author$project$Game$init = function (model) {
 		{machines: machines, seed: seedLast});
 }(
 	{
+		buffer: $elm$core$Dict$empty,
 		inventory: $author$project$Util$dictFromTuples(
 			_List_fromArray(
 				[
-					_Utils_Tuple2('water', 10),
-					_Utils_Tuple2('dirt', 5)
+					_Utils_Tuple2($author$project$Items$water, 10),
+					_Utils_Tuple2($author$project$Items$dirt, 5)
 				])),
 		log: _List_fromArray(
 			['Game begins']),
@@ -5605,22 +5620,6 @@ var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$Main$subscriptions = function (model) {
 	return $elm$core$Platform$Sub$none;
-};
-var $author$project$Game$addTurnAction = function (game) {
-	return _Utils_Tuple2(
-		_Utils_update(
-			game,
-			{turn: game.turn + 1}),
-		'New Turn ' + $elm$core$String$fromInt(game.turn + 1));
-};
-var $author$project$Game$applyLog = function (_v0) {
-	var game = _v0.a;
-	var logMessage = _v0.b;
-	return _Utils_update(
-		game,
-		{
-			log: A2($elm$core$List$cons, logMessage, game.log)
-		});
 };
 var $elm$core$Dict$get = F2(
 	function (targetKey, dict) {
@@ -5676,6 +5675,17 @@ var $arturopala$elm_monocle$Monocle$Lens$Lens = F2(
 	function (get, set) {
 		return {get: get, set: set};
 	});
+var $author$project$Game$bufferLens = A2(
+	$arturopala$elm_monocle$Monocle$Lens$Lens,
+	function ($) {
+		return $.buffer;
+	},
+	F2(
+		function (b, g) {
+			return _Utils_update(
+				g,
+				{buffer: b});
+		}));
 var $author$project$Game$inventoryLens = A2(
 	$arturopala$elm_monocle$Monocle$Lens$Lens,
 	function ($) {
@@ -5687,6 +5697,52 @@ var $author$project$Game$inventoryLens = A2(
 				g,
 				{inventory: i});
 		}));
+var $elm$core$Dict$values = function (dict) {
+	return A3(
+		$elm$core$Dict$foldr,
+		F3(
+			function (key, value, valueList) {
+				return A2($elm$core$List$cons, value, valueList);
+			}),
+		_List_Nil,
+		dict);
+};
+var $author$project$Game$addBufferToInventory = function (game) {
+	var inventory = $author$project$Game$inventoryLens.get(game);
+	var bufferList = $elm$core$Dict$values(
+		$author$project$Game$bufferLens.get(game));
+	var newInventory = A3(
+		$elm$core$List$foldl,
+		F2(
+			function (item, inv) {
+				return A2($author$project$Inventory$addItem, inv, item);
+			}),
+		inventory,
+		bufferList);
+	return A2(
+		$author$project$Game$bufferLens.set,
+		$elm$core$Dict$empty,
+		A2($author$project$Game$inventoryLens.set, newInventory, game));
+};
+var $author$project$Game$addTurnAction = function (game) {
+	return _Utils_Tuple2(
+		_Utils_update(
+			game,
+			{turn: game.turn + 1}),
+		_List_fromArray(
+			[
+				'New Turn ' + $elm$core$String$fromInt(game.turn + 1)
+			]));
+};
+var $author$project$Game$applyLog = function (_v0) {
+	var game = _v0.a;
+	var logMessages = _v0.b;
+	return _Utils_update(
+		game,
+		{
+			log: _Utils_ap(logMessages, game.log)
+		});
+};
 var $author$project$Inventory$itemToString = function (_v0) {
 	var name = _v0.a;
 	var amount = _v0.b;
@@ -5709,49 +5765,93 @@ var $author$project$Inventory$removeItem = F2(
 	});
 var $author$project$Game$processMachine = F2(
 	function (_v0, game) {
-		var action = _v0.action;
+		var actions = _v0.actions;
 		var name = _v0.name;
-		var inventory = $author$project$Game$inventoryLens.get(game);
-		if (action.$ === 'Produce') {
-			var item = action.a;
+		var res = A3(
+			$elm$core$List$foldl,
+			F2(
+				function (action, result) {
+					if (result.$ === 'Ok') {
+						var _v5 = result.a;
+						var oldInv = _v5.a;
+						var oldBuffer = _v5.b;
+						var oldlogs = _v5.c;
+						if (action.$ === 'Output') {
+							var item = action.a;
+							return $elm$core$Result$Ok(
+								_Utils_Tuple3(
+									oldInv,
+									A2($author$project$Inventory$addItem, oldBuffer, item),
+									A2(
+										$elm$core$List$cons,
+										'output' + $author$project$Inventory$itemToString(item),
+										oldlogs)));
+						} else {
+							var item = action.a;
+							var remove = A2($author$project$Inventory$removeItem, oldInv, item);
+							if (remove.$ === 'Nothing') {
+								return $elm$core$Result$Err(
+									_Utils_Tuple3(
+										oldInv,
+										oldBuffer,
+										A2(
+											$elm$core$List$cons,
+											'I can\'t find ' + $author$project$Inventory$itemToString(item),
+											oldlogs)));
+							} else {
+								var inventoryAfterRemove = remove.a;
+								return $elm$core$Result$Ok(
+									_Utils_Tuple3(
+										inventoryAfterRemove,
+										oldBuffer,
+										A2(
+											$elm$core$List$cons,
+											'I took ' + $author$project$Inventory$itemToString(item),
+											oldlogs)));
+							}
+						}
+					} else {
+						var err = result.a;
+						return $elm$core$Result$Err(err);
+					}
+				}),
+			$elm$core$Result$Ok(
+				_Utils_Tuple3(
+					$author$project$Game$inventoryLens.get(game),
+					$author$project$Game$bufferLens.get(game),
+					_List_Nil)),
+			actions);
+		if (res.$ === 'Ok') {
+			var _v2 = res.a;
+			var inventory = _v2.a;
+			var buffer = _v2.b;
+			var logs = _v2.c;
 			return _Utils_Tuple2(
 				A2(
-					$author$project$Game$inventoryLens.set,
-					A2($author$project$Inventory$addItem, inventory, item),
-					game),
-				name + (' produced ' + $author$project$Inventory$itemToString(item)));
+					$author$project$Game$bufferLens.set,
+					buffer,
+					A2($author$project$Game$inventoryLens.set, inventory, game)),
+				logs);
 		} else {
-			var fromItem = action.a;
-			var toItem = action.b;
-			var remove = A2($author$project$Inventory$removeItem, inventory, fromItem);
-			if (remove.$ === 'Nothing') {
-				return _Utils_Tuple2(
-					game,
-					name + (' couldn\'t find ' + $author$project$Inventory$itemToString(fromItem)));
-			} else {
-				var inventoryAfterRemove = remove.a;
-				return _Utils_Tuple2(
-					A2(
-						$author$project$Game$inventoryLens.set,
-						A2($author$project$Inventory$addItem, inventoryAfterRemove, toItem),
-						game),
-					name + (' converted ' + ($author$project$Inventory$itemToString(fromItem) + (' into ' + $author$project$Inventory$itemToString(toItem)))));
-			}
+			var _v3 = res.a;
+			var logs = _v3.c;
+			return _Utils_Tuple2(game, logs);
 		}
 	});
 var $author$project$Game$tick = function (game) {
-	return A3(
-		$elm$core$List$foldl,
-		F2(
-			function (f, acc) {
-				return $author$project$Game$applyLog(
-					f(acc));
-			}),
-		game,
-		_Utils_ap(
-			A2($elm$core$List$map, $author$project$Game$processMachine, game.machines),
-			_List_fromArray(
-				[$author$project$Game$addTurnAction])));
+	return $author$project$Game$addBufferToInventory(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (f, acc) {
+					return $author$project$Game$applyLog(
+						f(acc));
+				}),
+			game,
+			_Utils_ap(
+				A2($elm$core$List$map, $author$project$Game$processMachine, game.machines),
+				_List_fromArray(
+					[$author$project$Game$addTurnAction]))));
 };
 var $elm$core$Basics$composeL = F3(
 	function (g, f, x) {
@@ -5835,6 +5935,7 @@ var $author$project$Main$GenerateRoll = {$: 'GenerateRoll'};
 var $author$project$Main$Tick = {$: 'Tick'};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$html$Html$h6 = _VirtualDom_node('h6');
 var $elm$virtual_dom$VirtualDom$map = _VirtualDom_map;
 var $elm$html$Html$map = $elm$virtual_dom$VirtualDom$map;
 var $elm$core$Maybe$map = F2(
@@ -5866,16 +5967,6 @@ var $elm$html$Html$Events$onClick = function (msg) {
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
-var $elm$core$Dict$values = function (dict) {
-	return A3(
-		$elm$core$Dict$foldr,
-		F3(
-			function (key, value, valueList) {
-				return A2($elm$core$List$cons, value, valueList);
-			}),
-		_List_Nil,
-		dict);
-};
 var $author$project$Game$viewItem = function (_v0) {
 	var name = _v0.a;
 	var amount = _v0.b;
@@ -5933,7 +6024,7 @@ var $author$project$Style$machine = $elm$html$Html$Attributes$class('rounded-xl 
 var $author$project$Game$viewMachine = function (_v0) {
 	var id = _v0.id;
 	var name = _v0.name;
-	var action = _v0.action;
+	var actions = _v0.actions;
 	return A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -5942,17 +6033,6 @@ var $author$project$Game$viewMachine = function (_v0) {
 			[
 				$elm$html$Html$text(name),
 				$elm$html$Html$text(id),
-				$elm$html$Html$text(
-				function () {
-					if (action.$ === 'Produce') {
-						var item = action.a;
-						return ' produces ' + ($author$project$Inventory$itemToString(item) + ' per tick.');
-					} else {
-						var fromItem = action.a;
-						var toItem = action.b;
-						return ' converts ' + ($author$project$Inventory$itemToString(fromItem) + (' to ' + $author$project$Inventory$itemToString(toItem)));
-					}
-				}()),
 				A2(
 				$elm$html$Html$button,
 				_List_fromArray(
@@ -6018,7 +6098,22 @@ var $author$project$Main$view = function (model) {
 							[
 								$elm$html$Html$text('Tick')
 							])),
+						A2(
+						$elm$html$Html$h6,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Inventory')
+							])),
 						$author$project$Game$viewInventory(model.game.inventory),
+						A2(
+						$elm$html$Html$h6,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text('Buffer')
+							])),
+						$author$project$Game$viewInventory(model.game.buffer),
 						A2(
 						$elm$html$Html$map,
 						$author$project$Main$GameMsg,
