@@ -6,15 +6,17 @@ import Html.Attributes exposing (class, selected, src, value)
 import Html.Events exposing (onClick, onInput)
 import Inventory exposing (Inventory, Item)
 import Monocle.Lens exposing (Lens)
+import Random
 import Style
 import Util
+
 
 type alias GameModel =
     { turn : Int
     , inventory : Inventory
     , machines : List Machine
     , log : List String
-    , idCounter : Int
+    , seed : Random.Seed
     }
 
 
@@ -24,7 +26,7 @@ type MachineOperation
 
 
 type alias Machine =
-    { id : Int
+    { id : String
     , name : String
     , action : MachineOperation
     }
@@ -39,7 +41,7 @@ type MachineType
 
 type Msg
     = Tick
-    | RemoveMachine Int
+    | RemoveMachine String
 
 
 init : GameModel
@@ -48,20 +50,23 @@ init =
     , inventory = [ ( "water", 10 ), ( "dirt", 5 ) ] |> Util.dictFromTuples
     , machines = []
     , log = [ "Game begins" ]
-    , idCounter = 0
+    , seed = Random.initialSeed 555
     }
         |> (\model ->
                 let
-                    ( machines, idLast ) =
+                    ( machines, seedLast ) =
                         List.foldr
-                            (\( n, a ) ( l, counter ) ->
+                            (\( n, a ) ( l, s ) ->
                                 let
-                                    ( machine, id ) =
-                                        mkMachine n a counter
+                                    ( id, newSeed ) =
+                                        Util.generateId s
+
+                                    machine =
+                                        mkMachine n a id
                                 in
-                                ( machine :: l, id )
+                                ( machine :: l, newSeed )
                             )
-                            ( [], model.idCounter )
+                            ( [], model.seed )
                             (List.map getMachineDefinition
                                 [ DirtDigger
                                 , StoneCrusher
@@ -70,7 +75,7 @@ init =
                                 ]
                             )
                 in
-                { model | machines = machines, idCounter = idLast }
+                { model | machines = machines, seed = seedLast }
            )
 
 
@@ -113,13 +118,9 @@ tick game =
         )
 
 
-mkMachine : String -> MachineOperation -> Int -> ( Machine, Int )
-mkMachine name action idCounter =
-    let
-        id =
-            idCounter + 1
-    in
-    ( Machine id name action, id )
+mkMachine : String -> MachineOperation -> String -> Machine
+mkMachine name action id =
+    Machine id name action
 
 
 applyLog : ( GameModel, String ) -> GameModel
@@ -174,6 +175,7 @@ viewMachine : Machine -> Html Msg
 viewMachine { id, name, action } =
     div [ Style.machine ]
         [ text name
+        , text id
         , text
             (case action of
                 Produce item ->

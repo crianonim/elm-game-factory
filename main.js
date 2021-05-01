@@ -5321,132 +5321,97 @@ var $author$project$Util$dict = F2(
 				x));
 	});
 var $author$project$Util$dictFromTuples = $author$project$Util$dict($elm$core$Tuple$first);
-var $author$project$Game$Convert = F2(
-	function (a, b) {
-		return {$: 'Convert', a: a, b: b};
+var $elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
+			var jsArray = _v0.a;
+			var remainingItems = _v0.b;
+			if (_Utils_cmp(
+				$elm$core$Elm$JsArray$length(jsArray),
+				$elm$core$Array$branchFactor) < 0) {
+				return A2(
+					$elm$core$Array$builderToArray,
+					true,
+					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					$elm$core$List$cons,
+					$elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
 	});
-var $author$project$Game$Produce = function (a) {
-	return {$: 'Produce', a: a};
-};
-var $author$project$Game$getMachineDefinition = function (machineType) {
-	switch (machineType.$) {
-		case 'DirtDigger':
-			return _Utils_Tuple2(
-				'Dirt Digger',
-				$author$project$Game$Produce(
-					_Utils_Tuple2('dirt', 2)));
-		case 'Well':
-			return _Utils_Tuple2(
-				'Well',
-				$author$project$Game$Produce(
-					_Utils_Tuple2('water', 1)));
-		case 'StoneCrusher':
-			return _Utils_Tuple2(
-				'StoneCrusher',
-				A2(
-					$author$project$Game$Convert,
-					_Utils_Tuple2('stone', 2),
-					_Utils_Tuple2('dirt', 5)));
-		default:
-			return _Utils_Tuple2(
-				'Stone Digger',
-				$author$project$Game$Produce(
-					_Utils_Tuple2('stone', 1)));
+var $elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return $elm$core$Array$empty;
+	} else {
+		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
 	}
 };
-var $author$project$Game$Machine = F3(
-	function (id, name, action) {
-		return {action: action, id: id, name: name};
+var $elm$core$Bitwise$and = _Bitwise_and;
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var $elm$core$Array$getHelp = F3(
+	function (shift, index, tree) {
+		getHelp:
+		while (true) {
+			var pos = $elm$core$Array$bitMask & (index >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (_v0.$ === 'SubTree') {
+				var subTree = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
+					$temp$index = index,
+					$temp$tree = subTree;
+				shift = $temp$shift;
+				index = $temp$index;
+				tree = $temp$tree;
+				continue getHelp;
+			} else {
+				var values = _v0.a;
+				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
+			}
+		}
 	});
-var $author$project$Game$mkMachine = F3(
-	function (name, action, idCounter) {
-		var id = idCounter + 1;
-		return _Utils_Tuple2(
-			A3($author$project$Game$Machine, id, name, action),
-			id);
+var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
+var $elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var $elm$core$Array$get = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
+			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
+			A3($elm$core$Array$getHelp, startShift, index, tree)));
 	});
-var $author$project$Game$init = function (model) {
-	var _v0 = A3(
-		$elm$core$List$foldr,
-		F2(
-			function (_v1, _v2) {
-				var n = _v1.a;
-				var a = _v1.b;
-				var l = _v2.a;
-				var counter = _v2.b;
-				var _v3 = A3($author$project$Game$mkMachine, n, a, counter);
-				var machine = _v3.a;
-				var id = _v3.b;
-				return _Utils_Tuple2(
-					A2($elm$core$List$cons, machine, l),
-					id);
-			}),
-		_Utils_Tuple2(_List_Nil, model.idCounter),
-		A2(
-			$elm$core$List$map,
-			$author$project$Game$getMachineDefinition,
-			_List_fromArray(
-				[$author$project$Game$DirtDigger, $author$project$Game$StoneCrusher, $author$project$Game$Well, $author$project$Game$StoneDigger])));
-	var machines = _v0.a;
-	var idLast = _v0.b;
-	return _Utils_update(
-		model,
-		{idCounter: idLast, machines: machines});
-}(
-	{
-		idCounter: 0,
-		inventory: $author$project$Util$dictFromTuples(
-			_List_fromArray(
-				[
-					_Utils_Tuple2('water', 10),
-					_Utils_Tuple2('dirt', 5)
-				])),
-		log: _List_fromArray(
-			['Game begins']),
-		machines: _List_Nil,
-		turn: 1
-	});
+var $elm$random$Random$Generator = function (a) {
+	return {$: 'Generator', a: a};
+};
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
 var $elm$random$Random$Seed = F2(
 	function (a, b) {
 		return {$: 'Seed', a: a, b: b};
 	});
-var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
 var $elm$random$Random$next = function (_v0) {
 	var state0 = _v0.a;
 	var incr = _v0.b;
 	return A2($elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
-};
-var $elm$random$Random$initialSeed = function (x) {
-	var _v0 = $elm$random$Random$next(
-		A2($elm$random$Random$Seed, 0, 1013904223));
-	var state1 = _v0.a;
-	var incr = _v0.b;
-	var state2 = (state1 + x) >>> 0;
-	return $elm$random$Random$next(
-		A2($elm$random$Random$Seed, state2, incr));
-};
-var $elm$core$Platform$Cmd$batch = _Platform_batch;
-var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$init = function (_v0) {
-	return _Utils_Tuple2(
-		{
-			game: $author$project$Game$init,
-			roll: $elm$core$Maybe$Nothing,
-			seed: $elm$random$Random$initialSeed(666)
-		},
-		$elm$core$Platform$Cmd$none);
-};
-var $elm$core$Platform$Sub$batch = _Platform_batch;
-var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Main$subscriptions = function (model) {
-	return $elm$core$Platform$Sub$none;
-};
-var $elm$random$Random$Generator = function (a) {
-	return {$: 'Generator', a: a};
-};
-var $elm$core$Bitwise$and = _Bitwise_and;
-var $elm$core$Basics$negate = function (n) {
-	return -n;
 };
 var $elm$core$Bitwise$xor = _Bitwise_xor;
 var $elm$random$Random$peel = function (_v0) {
@@ -5486,11 +5451,161 @@ var $elm$random$Random$int = F2(
 				}
 			});
 	});
+var $elm$core$Array$length = function (_v0) {
+	var len = _v0.a;
+	return len;
+};
 var $elm$random$Random$step = F2(
 	function (_v0, seed) {
 		var generator = _v0.a;
 		return generator(seed);
 	});
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
+var $author$project$Util$generateId = function (seed) {
+	var idLength = 12;
+	var chars = $elm$core$Array$fromList(
+		A2($elm$core$String$split, '', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'));
+	var cLength = $elm$core$Array$length(chars);
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, _v1) {
+				var l = _v1.a;
+				var s = _v1.b;
+				var _v2 = A2(
+					$elm$random$Random$step,
+					A2($elm$random$Random$int, 0, cLength),
+					s);
+				var val = _v2.a;
+				var newSeed = _v2.b;
+				return _Utils_Tuple2(
+					_Utils_ap(
+						A2(
+							$elm$core$Maybe$withDefault,
+							'X',
+							A2($elm$core$Array$get, val, chars)),
+						l),
+					newSeed);
+			}),
+		_Utils_Tuple2('', seed),
+		A2($elm$core$List$range, 0, idLength));
+};
+var $author$project$Game$Convert = F2(
+	function (a, b) {
+		return {$: 'Convert', a: a, b: b};
+	});
+var $author$project$Game$Produce = function (a) {
+	return {$: 'Produce', a: a};
+};
+var $author$project$Game$getMachineDefinition = function (machineType) {
+	switch (machineType.$) {
+		case 'DirtDigger':
+			return _Utils_Tuple2(
+				'Dirt Digger',
+				$author$project$Game$Produce(
+					_Utils_Tuple2('dirt', 2)));
+		case 'Well':
+			return _Utils_Tuple2(
+				'Well',
+				$author$project$Game$Produce(
+					_Utils_Tuple2('water', 1)));
+		case 'StoneCrusher':
+			return _Utils_Tuple2(
+				'StoneCrusher',
+				A2(
+					$author$project$Game$Convert,
+					_Utils_Tuple2('stone', 2),
+					_Utils_Tuple2('dirt', 5)));
+		default:
+			return _Utils_Tuple2(
+				'Stone Digger',
+				$author$project$Game$Produce(
+					_Utils_Tuple2('stone', 1)));
+	}
+};
+var $elm$random$Random$initialSeed = function (x) {
+	var _v0 = $elm$random$Random$next(
+		A2($elm$random$Random$Seed, 0, 1013904223));
+	var state1 = _v0.a;
+	var incr = _v0.b;
+	var state2 = (state1 + x) >>> 0;
+	return $elm$random$Random$next(
+		A2($elm$random$Random$Seed, state2, incr));
+};
+var $author$project$Game$Machine = F3(
+	function (id, name, action) {
+		return {action: action, id: id, name: name};
+	});
+var $author$project$Game$mkMachine = F3(
+	function (name, action, id) {
+		return A3($author$project$Game$Machine, id, name, action);
+	});
+var $author$project$Game$init = function (model) {
+	var _v0 = A3(
+		$elm$core$List$foldr,
+		F2(
+			function (_v1, _v2) {
+				var n = _v1.a;
+				var a = _v1.b;
+				var l = _v2.a;
+				var s = _v2.b;
+				var _v3 = $author$project$Util$generateId(s);
+				var id = _v3.a;
+				var newSeed = _v3.b;
+				var machine = A3($author$project$Game$mkMachine, n, a, id);
+				return _Utils_Tuple2(
+					A2($elm$core$List$cons, machine, l),
+					newSeed);
+			}),
+		_Utils_Tuple2(_List_Nil, model.seed),
+		A2(
+			$elm$core$List$map,
+			$author$project$Game$getMachineDefinition,
+			_List_fromArray(
+				[$author$project$Game$DirtDigger, $author$project$Game$StoneCrusher, $author$project$Game$Well, $author$project$Game$StoneDigger])));
+	var machines = _v0.a;
+	var seedLast = _v0.b;
+	return _Utils_update(
+		model,
+		{machines: machines, seed: seedLast});
+}(
+	{
+		inventory: $author$project$Util$dictFromTuples(
+			_List_fromArray(
+				[
+					_Utils_Tuple2('water', 10),
+					_Utils_Tuple2('dirt', 5)
+				])),
+		log: _List_fromArray(
+			['Game begins']),
+		machines: _List_Nil,
+		seed: $elm$random$Random$initialSeed(555),
+		turn: 1
+	});
+var $elm$core$Platform$Cmd$batch = _Platform_batch;
+var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Main$init = function (_v0) {
+	return _Utils_Tuple2(
+		{
+			game: $author$project$Game$init,
+			roll: $elm$core$Maybe$Nothing,
+			seed: $elm$random$Random$initialSeed(666)
+		},
+		$elm$core$Platform$Cmd$none);
+};
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Main$subscriptions = function (model) {
+	return $elm$core$Platform$Sub$none;
+};
 var $author$project$Game$addTurnAction = function (game) {
 	return _Utils_Tuple2(
 		_Utils_update(
@@ -5542,15 +5657,6 @@ var $elm$core$Tuple$second = function (_v0) {
 	var y = _v0.b;
 	return y;
 };
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
 var $author$project$Inventory$addItem = F2(
 	function (inventory, _v0) {
 		var name = _v0.a;
@@ -5835,6 +5941,7 @@ var $author$project$Game$viewMachine = function (_v0) {
 		_List_fromArray(
 			[
 				$elm$html$Html$text(name),
+				$elm$html$Html$text(id),
 				$elm$html$Html$text(
 				function () {
 					if (action.$ === 'Produce') {

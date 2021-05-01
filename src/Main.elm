@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Platform.Cmd exposing (Cmd)
 import Random
+import Util
 
 
 main : Program () Model Msg
